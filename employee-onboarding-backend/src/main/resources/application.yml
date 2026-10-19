@@ -1,0 +1,14 @@
+﻿spring:
+    application:
+      name: employee-onboarding-backend
+    datasource:
+      url: jdbc:mysql://127.0.0.1:3306/employee_system(数据库名)?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      username: 你的mysql的用户名
+      password: 你的mysql的密码
+      driver-class-name: com.mysql.cj.jdbc.Driver
+    profiles:
+      active: local
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
