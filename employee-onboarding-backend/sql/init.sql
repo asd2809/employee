@@ -24,9 +24,9 @@ DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci
 COMMENT='员工表';
 
--- 4. 预置管理员账号，明文密码 123456，MD5哈希入库
+-- 4. 预置管理员账号，明文密码 123456，BCrypt 哈希入库
 INSERT INTO employee(account, password, name, gender, phone, email, role)
-VALUES ('admin', 'e10adc3949ba59abbe56e057f20f883e', '系统管理员', 1, '13900138000', 'admin@test.com', 1);
+VALUES ('admin', '$2a$10$FTe8anW3q.VAaEgJ3CYz/ei5c5vUOrO7cNAJ4TC3lIUBbk3B9MyHu', '系统管理员', 1, '13900138000', 'admin@test.com', 1);
 -- 5. 预置普通员工账号 test01，密码123456
 INSERT INTO employee(account, password, name, gender, phone, email, role)
-VALUES ('test01', 'e10adc3949ba59abbe56e057f20f883e', '普通测试员工', 0, '13900139000', 'test01@test.com', 0);
+VALUES ('test01', '$2a$10$FTe8anW3q.VAaEgJ3CYz/ei5c5vUOrO7cNAJ4TC3lIUBbk3B9MyHu', '普通测试员工', 0, '13900139000', 'test01@test.com', 0);

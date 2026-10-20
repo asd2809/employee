@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { createEmployee, getEmployees, login, type CreateEmployeeRequest, type EmployeeListItem, type LoginUser } from './api/employee'
+import { createEmployee, getEmployees, login, setToken, clearSession, type CreateEmployeeRequest, type EmployeeListItem, type LoginUser } from './api/employee'
 
 type FieldErrors = Partial<Record<keyof CreateEmployeeRequest, string>>
 const phonePattern = /^1[3-9]\d{9}$/
@@ -22,10 +22,12 @@ async function handleLogin() {
   if (!loginForm.account.trim() || !loginForm.password) { loginError.value = '请输入账号和密码'; return }
   loginLoading.value = true
   try {
-    const user = await login({ account: loginForm.account.trim(), password: loginForm.password })
-    if (user.role !== 1) throw new Error('该账号没有管理员权限')
-    currentUser.value = user
-    sessionStorage.setItem('onboarding-admin', JSON.stringify(user))
+    const res = await login({ account: loginForm.account.trim(), password: loginForm.password })
+    // role：1 管理员、0 普通员工；非管理员不允许进入工作台
+    if (res.user.role !== 1) throw new Error('该账号没有管理员权限')
+    setToken(res.token)
+    currentUser.value = res.user
+    sessionStorage.setItem('onboarding-admin', JSON.stringify(res.user))
     await loadEmployees()
   } catch (error) { loginError.value = error instanceof Error ? error.message : '登录失败' }
   finally { loginLoading.value = false }
@@ -64,14 +66,13 @@ async function handleCreateEmployee() {
     createMessage.value = '员工账号创建成功，员工 ID：' + result.id
     Object.assign(employeeForm, { account: '', password: '', name: '', gender: 1, phone: '', email: '' })
     fieldErrors.value = {}
-    await loadEmployees()
   } catch (error) { createError.value = error instanceof Error ? error.message : '账号创建失败' }
   finally { createLoading.value = false }
 }
 
 function logout() {
   currentUser.value = null
-  sessionStorage.removeItem('onboarding-admin')
+  clearSession()
   loginForm.password = ''
   activeMenu.value = 'employees'
 }

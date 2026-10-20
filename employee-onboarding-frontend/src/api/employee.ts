@@ -19,6 +19,14 @@ export interface LoginUser {
   role: number
 }
 
+/** 登录响应：JWT 令牌 + 登录用户信息 */
+export interface LoginResponse {
+  token: string
+  tokenType: string
+  expiresIn: number
+  user: LoginUser
+}
+
 export interface CreateEmployeeRequest {
   account: string
   password: string
@@ -33,14 +41,34 @@ export interface EmployeeListItem {
   name: string
 }
 
+const TOKEN_KEY = 'onboarding-token'
+const USER_KEY = 'onboarding-admin'
+
+export function getToken(): string | null {
+  return sessionStorage.getItem(TOKEN_KEY)
+}
+
+export function setToken(token: string): void {
+  sessionStorage.setItem(TOKEN_KEY, token)
+}
+
+/** 清除全部登录态（令牌 + 用户信息） */
+export function clearSession(): void {
+  sessionStorage.removeItem(TOKEN_KEY)
+  sessionStorage.removeItem(USER_KEY)
+}
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   let response: Response
+  const token = getToken()
 
   try {
     response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        // 已登录时自动携带令牌，后端据此鉴权
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options?.headers,
       },
     })
@@ -56,6 +84,11 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   }
 
   if (!response.ok || result.code !== 200) {
+    // 令牌失效时清除登录态并回到登录页（登录接口自身的 401 是密码错误，不在此列）
+    if (response.status === 401 && !url.endsWith('/login')) {
+      clearSession()
+      window.location.reload()
+    }
     throw new Error(result.message || '请求失败，请稍后重试')
   }
 
@@ -63,7 +96,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export function login(payload: LoginRequest) {
-  return request<LoginUser>('/api/employees/login', {
+  return request<LoginResponse>('/api/employees/login', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
@@ -78,4 +111,8 @@ export function createEmployee(payload: CreateEmployeeRequest) {
 
 export function getEmployees() {
   return request<EmployeeListItem[]>('/api/employees')
+}
+
+export function getCurrentUser() {
+  return request<LoginUser>('/api/employees/me')
 }
