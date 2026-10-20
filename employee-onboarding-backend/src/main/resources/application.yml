@@ -8,6 +8,12 @@ spring:
       driver-class-name: com.mysql.cj.jdbc.Driver
     profiles:
       active: local
+    data:
+      redis:
+        host: 127.0.0.1
+        port: 6379
+        # nonce 必须全局共享：多实例后端要连同一个 Redis，否则重放防护会失效
+        timeout: 3000ms
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
@@ -21,3 +27,21 @@ jwt:
   expire-seconds: 7200
   header: Authorization
   prefix: "Bearer "
+
+jwe:
+  # 是否开启 JWE 报文解密校验。生产必须为 true
+  enabled: true
+  # 是否强制 HTTPS。本地经 vite 代理走 http，需保持 false；生产改为 true
+  require-https: false
+  # 后端 RSA 私钥（PKCS#8 PEM）。留空则启动时生成临时密钥（重启失效，仅适合本地开发）。
+  # 生产环境必须填入固定私钥，且通过环境变量注入，禁止提交到代码仓库
+  private-key: ${JWE_PRIVATE_KEY:}
+  # 时间戳允许偏差（秒），超过即判定请求过期 → 业务码 40006
+  timestamp-tolerance-seconds: 300
+  # nonce 在 Redis 的存活时间（秒），期间重复出现即判定重放 → 业务码 40008
+  nonce-ttl-seconds: 600
+  nonce-key-prefix: "jwe:nonce:"
+  # 需要 JWE 加密的接口：方法 + 路径。未命中的接口保持原有明文行为，业务零影响
+  rules:
+    - POST /api/employees/login
+    - POST /api/employees

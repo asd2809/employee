@@ -48,6 +48,19 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- nimbus-jose-jwt：JWE(RFC7516) 解析解密，内部自动完成 RSA-OAEP 解密、A256GCM 解密与 authTag 完整性校验 -->
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>9.40</version>
+        </dependency>
+
+        <!-- Redis：全局共享的 nonce 存储，用于抵御重放攻击（多实例后端共用同一份） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

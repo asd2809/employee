@@ -1,3 +1,5 @@
+import { encryptPayload } from '@/utils/jwe'
+
 export interface ApiResult<T> {
   code: number
   message: string
@@ -43,6 +45,9 @@ export interface EmployeeListItem {
 
 const TOKEN_KEY = 'onboarding-token'
 const USER_KEY = 'onboarding-admin'
+
+/** JWE 密文的 Content-Type，后端过滤器据此识别（实际按原始 Body 读取，不依赖它） */
+const JWE_CONTENT_TYPE = 'application/jose'
 
 export function getToken(): string | null {
   return sessionStorage.getItem(TOKEN_KEY)
@@ -95,18 +100,43 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   return result.data
 }
 
+/**
+ * 受 JWE 保护的请求：业务参数先加密成 JWE 密文再作为 Body 发送。
+ *
+ * 若后端因密钥轮换（例如临时密钥重启）导致解密失败，业务码为 40003，
+ * 此时清掉公钥缓存重试一次，避免用户手动刷新。
+ */
+async function secureRequest<T>(url: string, data: unknown, options?: RequestInit): Promise<T> {
+  const body = await encryptPayload(data)
+  try {
+    return await request<T>(url, {
+      ...options,
+      method: options?.method ?? 'POST',
+      headers: { 'Content-Type': JWE_CONTENT_TYPE, ...options?.headers },
+      body,
+    })
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('完整性校验失败')) {
+      const retriedBody = await encryptPayload(data, true)
+      return await request<T>(url, {
+        ...options,
+        method: options?.method ?? 'POST',
+        headers: { 'Content-Type': JWE_CONTENT_TYPE, ...options?.headers },
+        body: retriedBody,
+      })
+    }
+    throw error
+  }
+}
+
 export function login(payload: LoginRequest) {
-  return request<LoginResponse>('/api/employees/login', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+  // 登录请求体经 JWE 加密，账号密码不会以明文出现在抓包中
+  return secureRequest<LoginResponse>('/api/employees/login', payload)
 }
 
 export function createEmployee(payload: CreateEmployeeRequest) {
-  return request<{ id: number }>('/api/employees', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+  // 新建员工同样经 JWE 加密
+  return secureRequest<{ id: number }>('/api/employees', payload)
 }
 
 export function getEmployees() {
