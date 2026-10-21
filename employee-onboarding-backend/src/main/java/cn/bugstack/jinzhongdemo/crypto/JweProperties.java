@@ -40,6 +40,11 @@ public class JweProperties {
     private String nonceKeyPrefix = "jwe:nonce:";
 
     /**
+     * nonce 存储实现：redis（默认，多实例共享，生产必须使用）或 memory（进程内，本地开发免 Redis）。
+     */
+    private String nonceStore = "redis";
+
+    /**
      * 需要 JWE 加密的请求规则，格式为 "HTTP方法 路径"，多个规则用逗号分隔。
      * 例：POST /api/employees/login,POST /api/employees
      * 只有命中规则的请求才会走解密校验，其余接口保持原有明文行为。

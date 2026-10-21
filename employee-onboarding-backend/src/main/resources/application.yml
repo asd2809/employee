@@ -41,6 +41,8 @@ jwe:
   # nonce 在 Redis 的存活时间（秒），期间重复出现即判定重放 → 业务码 40008
   nonce-ttl-seconds: 600
   nonce-key-prefix: "jwe:nonce:"
+  # nonce 存储：redis（默认，多实例共享，生产必须使用）| memory（进程内，仅本地开发免 Redis）
+  nonce-store: redis
   # 需要 JWE 加密的接口：方法 + 路径。未命中的接口保持原有明文行为，业务零影响
   rules:
     - POST /api/employees/login
