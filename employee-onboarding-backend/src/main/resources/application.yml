@@ -47,3 +47,6 @@ jwe:
   rules:
     - POST /api/employees/login
     - POST /api/employees
+    - PUT /api/employees/*
+    - PUT /api/employees/*/password
+    - DELETE /api/employees/*

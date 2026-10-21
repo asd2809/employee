@@ -39,8 +39,27 @@ export interface CreateEmployeeRequest {
 }
 
 export interface EmployeeListItem {
+  id: number
   account: string
   name: string
+  gender: number
+  phone: string
+  email: string
+  role: number
+}
+
+/** 修改资料：账号、角色、密码不在该接口内，避免越权 */
+export interface UpdateEmployeeRequest {
+  name: string
+  gender: number
+  phone: string
+  email: string
+}
+
+/** 修改密码：本人修改必传 oldPassword；管理员重置他人员工密码时可不传 */
+export interface ChangePasswordRequest {
+  oldPassword?: string
+  newPassword: string
 }
 
 const TOKEN_KEY = 'onboarding-token'
@@ -145,4 +164,23 @@ export function getEmployees() {
 
 export function getCurrentUser() {
   return request<LoginUser>('/api/employees/me')
+}
+
+export function getEmployee(id: number) {
+  return request<EmployeeListItem>(`/api/employees/${id}`)
+}
+
+/** 修改员工资料（本人或管理员），经 JWE 加密 */
+export function updateEmployee(id: number, payload: UpdateEmployeeRequest) {
+  return secureRequest<EmployeeListItem>(`/api/employees/${id}`, payload, { method: 'PUT' })
+}
+
+/** 修改/重置密码，独立接口，经 JWE 加密 */
+export function changePassword(id: number, payload: ChangePasswordRequest) {
+  return secureRequest<null>(`/api/employees/${id}/password`, payload, { method: 'PUT' })
+}
+
+/** 删除员工（逻辑删除），仅管理员，经 JWE 加密 */
+export function deleteEmployee(id: number) {
+  return secureRequest<null>(`/api/employees/${id}`, {}, { method: 'DELETE' })
 }
